@@ -1,10 +1,16 @@
 package com.alekseev.unscramblegame.ui_model
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import com.alekseev.unscramblegame.data.GameUiState
+import com.alekseev.unscramblegame.data.MAX_NO_OF_WORDS
+import com.alekseev.unscramblegame.data.SCORE_INCREASE
 import com.alekseev.unscramblegame.data.allWords
+import kotlinx.coroutines.flow.update
 
 class GameViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(GameUiState())
@@ -14,8 +20,48 @@ class GameViewModel : ViewModel() {
 
     private  var usedWords: MutableSet<String> = mutableSetOf()
 
-    private  fun shuffleCurrentWord(word: String): String
-    {
+    var userGuess by mutableStateOf("")
+        private set
+    fun updateUserGuess(guessedWord : String) {
+        userGuess = guessedWord
+    }
+    private fun updateGameState(updateScore: Int) {
+        if (usedWords.size == MAX_NO_OF_WORDS) {
+            _uiState.update { currentState ->
+                currentState.copy(
+                    isGuessedWordWrong = false,
+                    score = updateScore,
+                    isGameOver = true
+                )
+            }
+        } else {
+            _uiState.update { currentState ->
+                currentState.copy(
+                    isGuessedWordWrong = false,
+                    currentScrambledWord = pickRandomWordAndShuffle(),
+                    score = updateScore,
+                    currentWordCount = currentState.currentWordCount + 1
+                )
+            }
+        }
+    }
+    fun checkUserGuess() {
+        if (userGuess.equals(currentWord, ignoreCase = true)) {
+            val updateScore = _uiState.value.score + SCORE_INCREASE
+            updateGameState(updateScore)
+        } else {
+            _uiState.update { currentState ->
+                currentState.copy(isGuessedWordWrong = true)
+            }
+        }
+        updateUserGuess("")
+    }
+    fun skipWord() {
+        updateGameState(_uiState.value.score)
+
+        updateUserGuess("")
+    }
+    private  fun shuffleCurrentWord(word: String): String {
         val tempWord = word.toCharArray()
         tempWord.shuffle()
         while (String(tempWord) == word) {
