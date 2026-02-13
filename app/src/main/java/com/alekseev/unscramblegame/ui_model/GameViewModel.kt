@@ -89,4 +89,11 @@ class GameViewModel : ViewModel() {
             currentScrambledWord = pickRandomWordAndShuffle()
         )
     }
+
+    fun getUnscrambledWord(scrambledWord: String): String {
+
+        return com.alekseev.unscramblegame.data.allWords.firstOrNull { word ->
+            scrambledWord.toSet() == word.toSet()
+        } ?: ""
+    }
 }
